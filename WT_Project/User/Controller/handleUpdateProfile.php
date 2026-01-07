@@ -24,8 +24,10 @@ $errors = [];
 if ($name == "") {
     $errors["name"] = "Name cannot be empty";
 }
-if (strlen($phone) != 11) {
-    $errors["phone"] = "Phone must be 11 digits";
+if ($phone !== "") {
+    if (strlen($phone) != 11) {
+        $errors["phone"] = "Phone must be 11 digits";
+    }
 }
 
 if (!empty($errors)) {
