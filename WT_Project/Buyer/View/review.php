@@ -52,7 +52,7 @@ function handleSubmit() {
         document.getElementById("ratingErr").innerHTML = "";
     }
 
-    return valid; // ✅ allow submit only if valid
+    return valid; 
 }
 </script>
 <style>
