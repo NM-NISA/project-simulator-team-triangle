@@ -15,47 +15,80 @@ $userName = $_SESSION["userName"];
     <title>Browse & Search</title>
 <script>
 function fetchProducts() {
-    const search = document.getElementById('searchInput').value.trim();
-    const category = document.getElementById('categorySelect').value;
+    const search = document.getElementById("searchInput").value;
+    const category = document.getElementById("categorySelect").value;
 
-    const formData = new FormData();
-    formData.append('search', search);
-    formData.append('category', category);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/WT_Project/Buyer/Controller/handleSearchProduct.php", true);
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    fetch('/WT_Project/Buyer/Controller/handleSearchProduct.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(products => {
-        const container = document.getElementById('productContainer');
-        container.innerHTML = '';
+    xhr.onload = function () {
+        const container = document.getElementById("productContainer");
+        container.innerHTML = "";
 
-        if (!products || products.length === 0) {
-            container.innerHTML = '<p>No products found.</p>';
+        let products;
+        try {
+            products = JSON.parse(this.responseText);
+        } catch (e) {
+            console.error(this.responseText);
+            container.innerHTML = "<p>Server error</p>";
+            return;
+        }
+
+        if (products.length === 0) {
+            container.innerHTML = "<p>No products found.</p>";
             return;
         }
 
         products.forEach(p => {
-            const box = document.createElement('div');
-            box.className = 'product-box';
-            box.innerHTML = `
-                <h3>${p.product_name}</h3>
-                <p>${p.description}</p>
-                <p class="price">${p.price} TK</p>
-                <a href="#" class="buy-btn">Buy Now</a>
-                <a href="#" class="buy-btn">Add To Cart</a>
+            container.innerHTML += `
+                <div class="product-box">
+                    <img src="/WT_Project/Seller/Public/Uploads/${p.image}" alt="${p.product_name}" class="product-image">
+                    <h3>${p.product_name}</h3>
+                    <p class="price">${p.price} TK</p>
+                    <a href="/WT_Project/Buyer/View/placeOrder.php?product_id=${p.product_id}&product_name=${encodeURIComponent(p.product_name)}&price=${p.price}&image=${p.image}" class="buy-btn">Buy Now</a>
+                    <a href="#" class="buy-btn" onclick="addToCart(${p.product_id}); return false;">Add To Cart</a>
+                </div>
             `;
-            container.appendChild(box);
         });
-    });
+    };
+
+    xhr.send(
+        "search=" + encodeURIComponent(search) +
+        "&category=" + encodeURIComponent(category)
+    );
 }
 
-window.onload = function() {
-    document.getElementById('searchInput').addEventListener('keyup', fetchProducts);
-    document.getElementById('categorySelect').addEventListener('change', fetchProducts);
-    fetchProducts(); // load default
+window.onload = function () {
+    fetchProducts();
+    document.getElementById("searchInput").onkeyup = fetchProducts;
+    document.getElementById("categorySelect").onchange = fetchProducts;
 };
+function addToCart(productId) {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+
+    formData.append("product_id", productId);
+
+    xhr.open("POST", "/WT_Project/Buyer/Controller/handleAddToCart.php", true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert(response.message);
+                } catch (e) {
+                    alert("Invalid server response");
+                }
+            } else {
+                alert("Request failed. Please try again.");
+            }
+        }
+    };
+
+    xhr.send(formData);
+}
 </script>
     <style>
         body{
@@ -227,7 +260,7 @@ window.onload = function() {
             <textarea rows="1" cols="50" id="searchInput" name="searchInput" placeholder="Search by keyword"></textarea><br>
             <span style="font-size: 15px;">Search by Category</span>
             <select id="categorySelect" name="categorySelect">
-                <option disabled selected>Category All </option>
+                <option value="">Category All </option>
                 <option value="Books">Books</option>
                 <option value="Clothing">Clothing</option>
                 <option value="Electronics">Electronics</option>
