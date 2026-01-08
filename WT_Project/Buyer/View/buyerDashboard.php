@@ -16,6 +16,33 @@ $status = $_SESSION["userStatus"];
 <html>
 <head>
     <title>Dashboard</title>
+<script>
+    function addToCart(productId) {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+
+    formData.append("product_id", productId);
+
+    xhr.open("POST", "/WT_Project/Buyer/Controller/handleAddToCart.php", true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    alert(response.message);
+                } catch (e) {
+                    alert("Invalid server response");
+                }
+            } else {
+                alert("Request failed. Please try again.");
+            }
+        }
+    };
+
+    xhr.send(formData);
+}
+</script>
     <style>
         body{
             font-family: Arial, Helvetica, sans-serif;
@@ -237,8 +264,8 @@ $status = $_SESSION["userStatus"];
                              alt="<?= htmlspecialchars($product['product_name']) ?>">
                             <h3><?= htmlspecialchars($product['product_name']) ?></h3>
                             <p class="price"><?= htmlspecialchars($product['price']) ?> TK</p>
-                            <a href="#" class="buy-btn">Buy Now</a>
-                            <a href="#" class="buy-btn">Add To Cart</a>
+                            <a href="/WT_Project/Buyer/View/placeOrder.php?product_id=${p.product_id}&product_name=${encodeURIComponent(p.product_name)}&price=${p.price}&image=${p.image}" class="buy-btn">Buy Now</a>
+                            <a href="#" class="buy-btn" onclick="addToCart(<?= $product['product_id'] ?>)">Add To Cart</a>
                         </div>
                     <?php endforeach; ?>
                 </div>
