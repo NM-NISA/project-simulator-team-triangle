@@ -22,3 +22,4 @@ function addReview($userId, $title, $description, $rating)
     $db->closeConnection($con);
     return false;
 }
+?>
