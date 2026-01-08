@@ -6,39 +6,68 @@ if (!isset($_SESSION['isLoggedIn']) || $_SESSION['isLoggedIn'] !== true) {
     exit;
 }
 
+$userId = $_SESSION['userId'] ?? '';
 $name = $_SESSION['userName'] ?? '';
 $email = $_SESSION['userEmail'] ?? '';
 $password = $_SESSION['userPassword'] ?? '';
 $userType = $_SESSION['userType'] ?? '';
+
+$productId = $_GET['product_id'] ?? '';
+$productName = $_GET['product_name'] ?? '';
+$productPrice = $_GET['price'] ?? '';
+$productImage = $_GET['image'] ?? '';
+
+$productName = urldecode($productName);
+$productImage = urldecode($productImage);
+
+include($_SERVER['DOCUMENT_ROOT']."/WT_Project/Buyer/Model/cartModel.php");
+$cartModel = new CartModel();
+$cartProducts = $cartModel->getCartProducts($userId);
+
+$subTotal = 0;
+$grandTotal = 0;
+foreach($cartProducts as $p){
+    $subTotal += $p['price'] * $p['quantity'];
+    $grandTotal = $subTotal;
+}
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <title>Place Order</title>
     <script>
-        const price = 40000;
-        function changeQty(step) {
-               let qtyInput = document.getElementById("qty");
-               let qty = parseInt(qtyInput.value);
+        function changeQty(productId, step) {
+            const qtyInput = document.getElementById(`qty-${productId}`);
+            let qty = parseInt(qtyInput.value);
 
-               qty += step;
-               if (qty < 1) qty = 1;
+            qty += step;
+            if (qty < 1) qty = 1;
+            qtyInput.value = qty;
 
-               qtyInput.value = qty;
-               document.getElementById("total").innerText = qty * price;
+            const price = parseFloat(qtyInput.dataset.price); 
+            const productTotal = qty * price;
+            document.getElementById(`total-${productId}`).innerText = productTotal;
+
+            updateGrandTotal();
+            updateCart(productId, qty);
         }
-         function handleSubmit() {
-            const addressValue = document.getElementById("address").value;
+        function updateGrandTotal() {
+            let subTotal = 0;
+            let grandTotal = 0;
+            const qtyInputs = document.querySelectorAll('input[id^="qty-"]');
+            qtyInputs.forEach(input => {
+                const price = parseFloat(input.dataset.price);
+                const qty = parseInt(input.value);
+                subTotal += price * qty;
+            });
+            grandTotal = subTotal;
+            document.getElementById('sub-total').innerText = subTotal;
+            document.getElementById('grand-total').innerText = grandTotal;
+        }
+        function handleSubmit() {
             const mobileValue = document.getElementById("mobile").value;
             let valid = true;
             
-            if (!addressValue || addressValue == "") {
-                const ErrorElement = document.getElementById("addressErr");
-                ErrorElement.innerHTML = "Address is required";
-                valid = false;
-            } else {
-                document.getElementById("addressErr").innerHTML = "";
-            }
             if (!mobileValue || mobileValue == "") {
                 const ErrorElement = document.getElementById("mobileErr");
                 ErrorElement.innerHTML = "Mobile Number is required";
@@ -53,10 +82,50 @@ $userType = $_SESSION['userType'] ?? '';
                 }
             }
             if(valid){
-                document.getElementById("address").value="";
                 document.getElementById("mobile").value="";
                 alert("Order successfully placed");
             }
+        }
+        function updateCart(productId, quantity) {
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            formData.append("product_id", productId);
+            formData.append("quantity", quantity);
+
+            xhr.open("POST", "/WT_Project/Buyer/Controller/handleUpdateCart.php", true);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        alert(response.message);
+                    } else {
+                        alert("Request failed. Please try again.");
+                    }
+                }
+            };
+            xhr.send(formData);
+        }
+        function removeProduct(cartId) {
+            if (!confirm("Remove this product from cart?")) return;
+
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            formData.append("cart_id", cartId);
+
+            xhr.open("POST", "/WT_Project/Buyer/Controller/handleDeleteCart.php", true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    if (res.success) {
+                        document.getElementById("product-" + cartId).remove();
+                        updateGrandTotal();
+                    } else {
+                        alert("Failed to remove product");
+                    }
+                }
+            };
+            xhr.send(formData);
         }
     </script>
     <style>
@@ -172,10 +241,42 @@ $userType = $_SESSION['userType'] ?? '';
         }
         .product-box img {
             width: 100%;
-            max-width: 100px;
+            max-width: 50px;
             height: auto;
             margin-bottom: 5px;
             border-radius: 4px;
+        }
+        .product-box {
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .close-btn:hover {
+            background: darkred;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .summary-row span {
+            text-align: right;
+        }
+        .summary-row.grand {
+            font-weight: bold;
+            font-size: 18px;
         }
         footer{
             text-align: center;
@@ -184,11 +285,8 @@ $userType = $_SESSION['userType'] ?? '';
         }
     </style>
 </head>
-
 <body>
-
 <div class="main">
-
     <div class="header">
         <table width="100%">
             <tr>
@@ -228,36 +326,53 @@ $userType = $_SESSION['userType'] ?? '';
         </div>
     <div class="main-content">
         <div class="order-box">
-            <b>Add To Cart & Place Orders</b>
+            <b>Place Order</b>
             <br><br>
             
             <div class="product-container">
-            <div class="product-box">
-               <img src="#">
-               <br>
-               <h3>Product:</h3>
-               <p>Price: </p>
+            <?php if(empty($cartProducts)): ?>
+                <p>No Product on Your Cart.</p>
+            <?php else: ?>
+                <?php foreach($cartProducts as $product): ?>
+                    <div class="product-box" id="product-<?php echo $product['cart_id']; ?>">
+                        <button class="close-btn" onclick="removeProduct('<?php echo $product['cart_id']; ?>')">✖</button>
+                        <img src="/WT_Project/Seller/Public/Uploads/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>">
+                        <h3><?php echo htmlspecialchars($product['product_name']); ?></h3>
+                        <p>Quantity</p>
+                        <div class="qty-box">
+                            <button onclick="changeQty('<?php echo $product['product_id']; ?>', -1)">-</button>
+                            <input type="text" id="qty-<?php echo $product['product_id']; ?>" value="<?php echo $product['quantity']; ?>" data-price="<?php echo $product['price']; ?>" readonly>
+                            <button onclick="changeQty('<?php echo $product['product_id']; ?>', 1)">+</button>
+                        </div>
+                        <p>Total: <span id="total-<?php echo $product['product_id']; ?>"><?php echo $product['price'] * $product['quantity']; ?></span> TK</p>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
             </div>
-            <div class="product-box">
-                <p>Quantity</p>
-                <div class="qty-box">
-                <button onclick="changeQty(-1)">-</button>
-                <input type="text" id="qty" value="1" readonly>
-                <button onclick="changeQty(1)">+</button>
-                </div>
-                <p class="total">Total: <span id="total">000</span>TK</p>
-            </div>
-            </div>
-            <br>
-            <p>Delivery Location </p>
-            <textarea type="text" cols="65" id="address"></textarea>
-            <p id="addressErr" style="color:red;"></p>
-            <p>Mobile No. </p>
-            <textarea type="tel" cols="65" id="mobile"></textarea>
+            <p><h3>Delivery Location &nbsp;
+            <select>
+                <option selected>AIUB Campus </option>
+            </select></h3></p>
+            <p><h3>Mobile Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <input type="tel" id="mobile"></h3></p>
             <p id="mobileErr" style="color:red;"></p>
 
             <hr>
+            
+            <div class="summary-row">
+                <p>Sub Total:</p>
+                <span id="sub-total"><?php echo $subTotal; ?> TK</span>
+            </div>
 
+            <div class="summary-row">
+                <p>Delivery Charge:</p>
+                <span>0 TK</span>
+            </div>
+
+            <div class="summary-row grand">
+                <p>Grand Total:</p>
+                <span id="grand-total"><?php echo $grandTotal; ?> TK</span>
+            </div>
             <button onclick="handleSubmit()">Place Order</button>
         </div>
         </div>
