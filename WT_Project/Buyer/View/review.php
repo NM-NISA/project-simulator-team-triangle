@@ -52,7 +52,7 @@ function handleSubmit() {
         document.getElementById("ratingErr").innerHTML = "";
     }
 
-    return valid; 
+    return valid;
 }
 </script>
 <style>
@@ -188,6 +188,7 @@ function handleSubmit() {
                 <p style="color:red;">Failed to submit review. Try again.</p>
             <?php endif; ?>
             <form method="POST" action="/WT_Project/Buyer/Controller/handleProductReview.php" onsubmit="return handleSubmit();">
+            <input type="hidden" name="product_id" value="<?= $productId ?>">
             <p>Review Title</p>
             <textarea id="title" name="title" placeholder="Write product name"></textarea>
             <p id="titleErr" style="color:red;"></p>
