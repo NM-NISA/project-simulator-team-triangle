@@ -131,7 +131,6 @@ unset($_SESSION["passErr"]);
                 <a class="btn" href="/WT_Project/Buyer/View/buyerDashboard.php">Dashboard</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/searchProduct.php">Search Products</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/placeOrder.php">Place Order</a><br><br>
-                <a class="btn" href="/WT_Project/Buyer/View/review.php">Review</a><br><br>
             <?php endif; ?>
             <a class="btn" href="/WT_Project/User/View/viewProfile.php">View Profile</a><br><br>
             <a class="btn" href="/WT_Project/User/Controller/logout.php">Logout</a>
@@ -148,6 +147,7 @@ unset($_SESSION["passErr"]);
                 <?php echo $passErr; ?>
             </p>
             <button type="submit">Update Password</button>
+            <button onclick="window.location.href='/WT_Project/User/View/viewProfile.php'">Back</button>
         </form>
         </div>
     </div>
