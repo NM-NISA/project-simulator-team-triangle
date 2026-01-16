@@ -1,5 +1,5 @@
 <?php
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
 
 function getAllProductsGroupedByCategory() {
     $db = new DatabaseConnection();
@@ -53,6 +53,21 @@ function getProducts($search = "", $category = "") {
 
     $db->closeConnection($conn);
     return $products;
+}
+
+function getProductById($productId){
+    include_once($_SERVER['DOCUMENT_ROOT'].'/WT_Project/User/Model/db.php');
+    $db = new DatabaseConnection();
+    $conn = $db->openConnection();
+
+    $stmt = mysqli_prepare($conn, "SELECT * FROM product_table WHERE product_id=?");
+    mysqli_stmt_bind_param($stmt, "i", $productId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $product = mysqli_fetch_assoc($result);
+
+    $db->closeConnection($conn);
+    return $product;
 }
 
 ?>
