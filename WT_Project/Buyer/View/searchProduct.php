@@ -251,7 +251,6 @@ function addToCart(productId) {
                 <a class="btn" href="/WT_Project/Buyer/View/buyerDashboard.php">Dashboard</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/searchProduct.php">Search Products</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/placeOrder.php">Place Order</a><br><br>
-                <a class="btn" href="/WT_Project/Buyer/View/review.php">Review</a><br><br>
             <?php endif; ?>
             <a class="btn" href="/WT_Project/User/View/viewProfile.php">View Profile</a><br><br>
             <a class="btn" href="/WT_Project/User/Controller/logout.php">Logout</a>
