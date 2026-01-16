@@ -1,6 +1,6 @@
 <?php
 session_start();
-include $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/productModel.php';
+include_once $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/productModel.php';
 
 $productsByCategory = getAllProductsGroupedByCategory();
 
@@ -11,13 +11,23 @@ if (!isset($_SESSION["isLoggedIn"]) || $_SESSION["userType"] !== 'buyer') {
 $name = $_SESSION["userName"];
 $userType = $_SESSION["userType"];
 $status = $_SESSION["userStatus"];
+
+$seeReviewsProductId = $_GET['see_reviews'] ?? null;
+$reviewsForProduct = [];
+
+if ($seeReviewsProductId) {
+    $seeReviewsProductId = intval($seeReviewsProductId); 
+    include_once $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/reviewModel.php';
+    $reviewsForProduct = getReviewsByProductId($seeReviewsProductId);
+}
+
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard</title>
+<title>Dashboard</title>
 <script>
-    function addToCart(productId) {
+function addToCart(productId) {
     const xhr = new XMLHttpRequest();
     const formData = new FormData();
 
@@ -198,6 +208,16 @@ $status = $_SESSION["userStatus"];
             outline: 3px solid #007bff;
             outline-offset: 10px;
         }
+        .review-box {
+            margin-top: 10px;
+            background: #e0e0e0;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+        }
+        .single-review h4 {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -233,7 +253,6 @@ $status = $_SESSION["userStatus"];
                 <a class="btn" href="/WT_Project/Buyer/View/buyerDashboard.php">Dashboard</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/searchProduct.php">Search Products</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/placeOrder.php">Place Order</a><br><br>
-                <a class="btn" href="/WT_Project/Buyer/View/review.php">Review</a><br><br>
             <?php endif; ?>
             <a class="btn" href="/WT_Project/User/View/viewProfile.php">View Profile</a><br><br>
             <a class="btn" href="/WT_Project/User/Controller/logout.php">Logout</a>
@@ -246,6 +265,10 @@ $status = $_SESSION["userStatus"];
                 </div>
                 <div class="card">
                     <h3>Total Purchased products</h3>
+                    <p>0</p>
+                </div>
+                <div class="card">
+                    <h3>Order Status</h3>
                     <p>0</p>
                 </div>
             </div>
@@ -264,8 +287,32 @@ $status = $_SESSION["userStatus"];
                              alt="<?= htmlspecialchars($product['product_name']) ?>">
                             <h3><?= htmlspecialchars($product['product_name']) ?></h3>
                             <p class="price"><?= htmlspecialchars($product['price']) ?> TK</p>
-                            <a href="/WT_Project/Buyer/View/placeOrder.php?product_id=${p.product_id}&product_name=${encodeURIComponent(p.product_name)}&price=${p.price}&image=${p.image}" class="buy-btn">Buy Now</a>
+                            <a href="/WT_Project/Buyer/View/placeOrder.php?product_id=<?= $product['product_id'] ?>&product_name=<?= urlencode($product['product_name']) ?>&price=<?= $product['price'] ?>&image=<?= urlencode($product['image']) ?>" class="buy-btn">Buy Now</a>
                             <a href="#" class="buy-btn" onclick="addToCart(<?= $product['product_id'] ?>)">Add To Cart</a>
+                            <br><br>
+                            <a href="/WT_Project/Buyer/View/review.php?product_id=<?= $product['product_id'] ?>" class="buy-btn">Review</a>
+                            <br><br>
+                            <hr>
+                            <br>
+                            <a href="?see_reviews=<?= $product['product_id'] ?>">See Reviews</a>
+
+                            <?php if ($seeReviewsProductId == $product['product_id']): ?>
+                            <div class="review-box">
+                                <?php if (empty($reviewsForProduct)): ?>
+                                    <p>No reviews yet.</p>
+                                <?php else: ?>
+                                <?php foreach ($reviewsForProduct as $r): ?>
+                                    <div class="single-review">
+                                        <small><?= htmlspecialchars($r['review_date']) ?></small>
+                                        <h4><?= htmlspecialchars($r['name']) ?></h4>
+                                        <p>Rating: <?= htmlspecialchars($r['rating']) ?></p>
+                                        <p><?= htmlspecialchars($r['description']) ?></p>
+                                        <hr>
+                                    </div>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
