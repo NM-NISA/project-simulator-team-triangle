@@ -1,6 +1,6 @@
 <?php
 session_start();
-include $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/productModel.php';
+include_once $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/productModel.php';
 
 if (!isset($_SESSION['isLoggedIn']) || $_SESSION['isLoggedIn'] !== true) {
     header("Location: /WT_Project/User/View/login.php");
