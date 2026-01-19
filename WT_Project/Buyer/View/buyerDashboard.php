@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/productModel.php';
+include_once $_SERVER['DOCUMENT_ROOT'] . '/WT_Project/Buyer/Model/orderModel.php';
 
 $productsByCategory = getAllProductsGroupedByCategory();
 
@@ -11,6 +12,9 @@ if (!isset($_SESSION["isLoggedIn"]) || $_SESSION["userType"] !== 'buyer') {
 $name = $_SESSION["userName"];
 $userType = $_SESSION["userType"];
 $status = $_SESSION["userStatus"];
+$userId = $_SESSION['userId']; 
+$orderStatuses = getOrderStatusByUserId($userId);
+$totalPurchased = getTotalPurchasedProducts($userId);
 
 $seeReviewsProductId = $_GET['see_reviews'] ?? null;
 $reviewsForProduct = [];
@@ -265,11 +269,19 @@ function addToCart(productId) {
                 </div>
                 <div class="card">
                     <h3>Total Purchased products</h3>
-                    <p>0</p>
+                    <p><?= htmlspecialchars($totalPurchased) ?></p>
                 </div>
                 <div class="card">
                     <h3>Order Status</h3>
-                    <p>0</p>
+                    <?php if (!empty($orderStatuses)): ?>
+                        <ul style="list-style:none; padding-left:0;">
+                        <?php foreach($orderStatuses as $status => $count): ?>
+                            <li><?= htmlspecialchars($status) ?>: <?= $count ?></li>
+                        <?php endforeach; ?>
+                        </ul>
+                    <?php else: ?>
+                    <p>No orders yet</p>
+                    <?php endif; ?>
                 </div>
             </div>
             <div><h3>Available Products</h3></div>
