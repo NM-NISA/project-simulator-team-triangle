@@ -10,6 +10,8 @@ $name = $_SESSION['userName'] ?? '';
 $email = $_SESSION['userEmail'] ?? '';
 $password = $_SESSION['userPassword'] ?? '';
 $userType = $_SESSION['userType'] ?? '';
+
+$productId = $_GET['product_id'] ?? 0;
 ?>
 <!DOCTYPE html>
 <html>
