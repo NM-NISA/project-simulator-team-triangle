@@ -1,5 +1,8 @@
 <?php
 session_start();
+include_once($_SERVER['DOCUMENT_ROOT']."/WT_Project/Buyer/Model/cartModel.php");
+include_once($_SERVER['DOCUMENT_ROOT']."/WT_Project/Buyer/Model/productModel.php");
+include_once($_SERVER['DOCUMENT_ROOT']."/WT_Project/Buyer/Model/orderModel.php");
 
 if (!isset($_SESSION['isLoggedIn']) || $_SESSION['isLoggedIn'] !== true) {
     header("Location: /WT_Project/User/View/login.php");
@@ -12,23 +15,68 @@ $email = $_SESSION['userEmail'] ?? '';
 $password = $_SESSION['userPassword'] ?? '';
 $userType = $_SESSION['userType'] ?? '';
 
-$productId = $_GET['product_id'] ?? '';
-$productName = $_GET['product_name'] ?? '';
-$productPrice = $_GET['price'] ?? '';
-$productImage = $_GET['image'] ?? '';
-
-$productName = urldecode($productName);
-$productImage = urldecode($productImage);
-
-include($_SERVER['DOCUMENT_ROOT']."/WT_Project/Buyer/Model/cartModel.php");
+$buyNowProductId = $_GET['product_id'] ?? null;
 $cartModel = new CartModel();
-$cartProducts = $cartModel->getCartProducts($userId);
+$productsToShow = [];
+
+if ($buyNowProductId) {
+    $buyNowProductId = intval($buyNowProductId);
+    $product = getProductById($buyNowProductId); 
+    if ($product) {
+        $productsToShow[] = [
+            'product_id' => $product['product_id'],
+            'product_name' => $product['product_name'],
+            'price' => $product['price'],
+            'quantity' => 1,
+            'image' => $product['image']
+        ];
+    }
+} else {
+    $productsToShow = $cartModel->getCartProducts($userId);
+}
 
 $subTotal = 0;
-$grandTotal = 0;
-foreach($cartProducts as $p){
+foreach($productsToShow as $p){
     $subTotal += $p['price'] * $p['quantity'];
-    $grandTotal = $subTotal;
+}
+$grandTotal = $subTotal;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $deliveryLocation = $_POST['delivery_location'] ?? 'AIUB Campus';
+    $mobile = $_POST['mobile'] ?? '';
+
+    if ($buyNowProductId) {
+        $product = getProductById($buyNowProductId);
+
+        $quantity = intval($_POST['quantity'][$buyNowProductId] ?? 1);
+        $total = $product['price'] * $quantity;
+
+        addOrder(
+            $userId,
+            $product['product_id'],
+            $quantity,
+            $total,
+            $deliveryLocation,
+            $mobile
+        );
+    } else {
+        $latestCartProducts = $cartModel->getCartProducts($userId);
+
+        foreach ($latestCartProducts as $p) {
+            $total = $p['price'] * $p['quantity'];
+
+            addOrder(
+                $userId,
+                $p['product_id'],
+                $p['quantity'],
+                $total,
+                $deliveryLocation,
+                $mobile
+            );
+        }
+    }
+    echo "<script>alert('Order successfully placed'); window.location='/WT_Project/Buyer/View/buyerDashboard.php';</script>";
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -36,20 +84,24 @@ foreach($cartProducts as $p){
 <head>
     <title>Place Order</title>
     <script>
-        function changeQty(productId, step) {
+        function changeQty(productId, cartId, step) {
             const qtyInput = document.getElementById(`qty-${productId}`);
-            let qty = parseInt(qtyInput.value);
+            const hiddenQty = document.getElementById(`hidden-qty-${productId}`);
 
+            let qty = parseInt(qtyInput.value);
             qty += step;
             if (qty < 1) qty = 1;
-            qtyInput.value = qty;
 
-            const price = parseFloat(qtyInput.dataset.price); 
-            const productTotal = qty * price;
-            document.getElementById(`total-${productId}`).innerText = productTotal;
+            qtyInput.value = qty;
+            hiddenQty.value = qty;
+
+            const price = parseFloat(qtyInput.dataset.price);
+            document.getElementById(`total-${productId}`).innerText = qty * price;
 
             updateGrandTotal();
-            updateCart(productId, qty);
+            if (cartId !== null) {
+                updateCart(cartId, qty);
+            }
         }
         function updateGrandTotal() {
             let subTotal = 0;
@@ -81,15 +133,17 @@ foreach($cartProducts as $p){
                    document.getElementById("mobileErr").innerHTML = "";
                 }
             }
+            return valid;
+
             if(valid){
                 document.getElementById("mobile").value="";
                 alert("Order successfully placed");
             }
         }
-        function updateCart(productId, quantity) {
+        function updateCart(cartId, quantity) {
             const xhr = new XMLHttpRequest();
             const formData = new FormData();
-            formData.append("product_id", productId);
+            formData.append("cart_id", cartId);
             formData.append("quantity", quantity);
 
             xhr.open("POST", "/WT_Project/Buyer/Controller/handleUpdateCart.php", true);
@@ -319,7 +373,6 @@ foreach($cartProducts as $p){
                 <a class="btn" href="/WT_Project/Buyer/View/buyerDashboard.php">Dashboard</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/searchProduct.php">Search Products</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/placeOrder.php">Place Order</a><br><br>
-                <a class="btn" href="/WT_Project/Buyer/View/review.php">Review</a><br><br>
             <?php endif; ?>
             <a class="btn" href="/WT_Project/User/View/viewProfile.php">View Profile</a><br><br>
             <a class="btn" href="/WT_Project/User/Controller/logout.php">Logout</a>
@@ -328,33 +381,36 @@ foreach($cartProducts as $p){
         <div class="order-box">
             <b>Place Order</b>
             <br><br>
-            
+            <form method="POST" onsubmit="return handleSubmit()">
             <div class="product-container">
-            <?php if(empty($cartProducts)): ?>
-                <p>No Product on Your Cart.</p>
-            <?php else: ?>
-                <?php foreach($cartProducts as $product): ?>
-                    <div class="product-box" id="product-<?php echo $product['cart_id']; ?>">
-                        <button class="close-btn" onclick="removeProduct('<?php echo $product['cart_id']; ?>')">✖</button>
-                        <img src="/WT_Project/Seller/Public/Uploads/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>">
-                        <h3><?php echo htmlspecialchars($product['product_name']); ?></h3>
-                        <p>Quantity</p>
+                <?php if(!empty($productsToShow)): ?>
+                    <?php foreach($productsToShow as $product): ?>
+                    <div class="product-box" <?= isset($product['cart_id']) ? "id='product-{$product['cart_id']}'" : "" ?>>
+                        <?php if(isset($product['cart_id'])): ?>
+                        <button class="close-btn" onclick="removeProduct('<?= $product['cart_id'] ?>')">✖</button>
+                        <?php endif; ?>
+                        <img src="/WT_Project/Seller/Public/Uploads/<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['product_name']) ?>">
+                        <h3><?= htmlspecialchars($product['product_name']) ?></h3>
+                        <p>Quantity:</p>
                         <div class="qty-box">
-                            <button onclick="changeQty('<?php echo $product['product_id']; ?>', -1)">-</button>
-                            <input type="text" id="qty-<?php echo $product['product_id']; ?>" value="<?php echo $product['quantity']; ?>" data-price="<?php echo $product['price']; ?>" readonly>
-                            <button onclick="changeQty('<?php echo $product['product_id']; ?>', 1)">+</button>
-                        </div>
-                        <p>Total: <span id="total-<?php echo $product['product_id']; ?>"><?php echo $product['price'] * $product['quantity']; ?></span> TK</p>
+                        <button type="button" onclick="changeQty(<?= $product['product_id'] ?>, <?= isset($product['cart_id']) ? $product['cart_id'] : 'null' ?>, -1)">-</button>
+                        <input type="text" id="qty-<?= $product['product_id'] ?>" value="<?= $product['quantity'] ?>" data-price="<?= $product['price'] ?>" readonly>
+                        <input type="hidden" name="quantity[<?= $product['product_id'] ?>]" id="hidden-qty-<?= $product['product_id'] ?>" value="<?= $product['quantity'] ?>">
+                        <button type="button" onclick="changeQty(<?= $product['product_id'] ?>, <?= isset($product['cart_id']) ? $product['cart_id'] : 'null' ?>, 1)">+</button>
                     </div>
+                    <p>Total: <span id="total-<?= $product['product_id'] ?>"><?= $product['price'] * $product['quantity'] ?></span> TK</p>
+                </div>
                 <?php endforeach; ?>
-            <?php endif; ?>
+                <?php else: ?>
+                    <p>No products to show.</p>
+                <?php endif; ?>
             </div>
             <p><h3>Delivery Location &nbsp;
-            <select>
-                <option selected>AIUB Campus </option>
+            <select name="delivery_location">
+                <option value="AIUB Campus" selected>AIUB Campus </option>
             </select></h3></p>
             <p><h3>Mobile Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <input type="tel" id="mobile"></h3></p>
+            <input type="tel" id="mobile" name="mobile"></h3></p>
             <p id="mobileErr" style="color:red;"></p>
 
             <hr>
@@ -373,7 +429,8 @@ foreach($cartProducts as $p){
                 <p>Grand Total:</p>
                 <span id="grand-total"><?php echo $grandTotal; ?> TK</span>
             </div>
-            <button onclick="handleSubmit()">Place Order</button>
+            <button type="submit">Place Order</button>
+            </form>
         </div>
         </div>
     </div>
