@@ -1,5 +1,5 @@
 <?php
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
 
 function addToCart($userId, $productId) {
     $db = new DatabaseConnection();
@@ -70,6 +70,27 @@ class CartModel {
         }
 
         $db->closeConnection($conn);
+    }
+
+    function updateCartQuantityByCartId($cartId, $quantity) {
+        $db = new DatabaseConnection();
+        $conn = $db->openConnection();
+
+        if ($quantity > 0) {
+            $stmt = $conn->prepare(
+                "UPDATE cart_table SET quantity = ? WHERE cart_id = ?"
+            );
+            $stmt->bind_param("ii", $quantity, $cartId);
+        } else {
+            $stmt = $conn->prepare(
+                "DELETE FROM cart_table WHERE cart_id = ?"
+            );
+            $stmt->bind_param("i", $cartId);
+        }
+
+        $stmt->execute();
+        $db->closeConnection($conn);
+        return true;
     }
 
     function deleteFromCart($userId, $cartId) {
