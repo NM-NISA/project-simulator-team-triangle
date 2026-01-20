@@ -69,7 +69,7 @@ if (mysqli_num_rows($result) == 1) {
     }
 
 } else {
-    $_SESSION["loginErr"] = "Invalid email or inactive account";
+    $_SESSION["loginErr"] = "Your account has been blocked. Please contact admin.";
     header("Location: /WT_Project/User/View/login.php");
     exit;
 }
