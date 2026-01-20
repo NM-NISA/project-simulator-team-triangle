@@ -30,7 +30,7 @@ function getProducts($search = "", $category = "") {
     $search = mysqli_real_escape_string($conn, $search);
     $category = mysqli_real_escape_string($conn, $category);
 
-    $sql = "SELECT product_id, product_name, description, price, category_name, image
+    $sql = "SELECT product_id, product_name, description, price, category_name, image, availability
         FROM products_table
         WHERE status = 'approved'";
 
@@ -60,7 +60,7 @@ function getProductById($productId){
     $db = new DatabaseConnection();
     $conn = $db->openConnection();
 
-    $stmt = mysqli_prepare($conn, "SELECT * FROM product_table WHERE product_id=?");
+    $stmt = mysqli_prepare($conn, "SELECT * FROM products_table WHERE product_id=?");
     mysqli_stmt_bind_param($stmt, "i", $productId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
