@@ -222,6 +222,15 @@ function addToCart(productId) {
         .single-review h4 {
             margin: 0;
         }
+        .availability {
+            padding: 5px 10px;
+            radius: 20px;
+            font-size: 16px;
+            color: #ffffff;
+            background-color: #a5a5a5;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
     </style>
 </head>
 <body>
@@ -298,6 +307,7 @@ function addToCart(productId) {
                             <img src="/WT_Project/Seller/Public/Uploads/<?= htmlspecialchars($product['image']) ?>" 
                              alt="<?= htmlspecialchars($product['product_name']) ?>">
                             <h3><?= htmlspecialchars($product['product_name']) ?></h3>
+                            <div class="availability"><?= htmlspecialchars($product['availability']) ?></div><br>
                             <p class="price"><?= htmlspecialchars($product['price']) ?> TK</p>
                             <a href="/WT_Project/Buyer/View/placeOrder.php?product_id=<?= $product['product_id'] ?>&product_name=<?= urlencode($product['product_name']) ?>&price=<?= $product['price'] ?>&image=<?= urlencode($product['image']) ?>" class="buy-btn">Buy Now</a>
                             <a href="#" class="buy-btn" onclick="addToCart(<?= $product['product_id'] ?>)">Add To Cart</a>
