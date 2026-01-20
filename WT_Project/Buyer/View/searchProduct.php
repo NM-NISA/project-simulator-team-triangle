@@ -45,6 +45,7 @@ function fetchProducts() {
                 <div class="product-box">
                     <img src="/WT_Project/Seller/Public/Uploads/${p.image}" alt="${p.product_name}" class="product-image">
                     <h3>${p.product_name}</h3>
+                    <div class="availability">${p.availability}</div><br> 
                     <p class="price">${p.price} TK</p>
                     <a href="/WT_Project/Buyer/View/placeOrder.php?product_id=${p.product_id}&product_name=${encodeURIComponent(p.product_name)}&price=${p.price}&image=${p.image}" class="buy-btn">Buy Now</a>
                     <a href="#" class="buy-btn" onclick="addToCart(${p.product_id}); return false;">Add To Cart</a>
@@ -215,6 +216,15 @@ function addToCart(productId) {
         .product-box:hover {
             outline: 3px solid #007bff;
             outline-offset: 10px;
+        }
+        .availability {
+            padding: 5px 10px;
+            radius: 20px;
+            font-size: 16px;
+            color: #ffffff;
+            background-color: #a5a5a5;
+            font-weight: bold;
+            text-transform: capitalize;
         }
     </style>
 </head>
