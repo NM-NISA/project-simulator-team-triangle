@@ -1,5 +1,8 @@
 <?php
 session_start();
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/productModel.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/ordersModel.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/userModel.php");
 
 if (!isset($_SESSION['isLoggedIn']) || $_SESSION['isLoggedIn'] !== true) {
     header("Location: /WT_Project/User/View/login.php");
@@ -10,6 +13,12 @@ $name = $_SESSION['userName'] ?? '';
 $email = $_SESSION['userEmail'] ?? '';
 $password = $_SESSION['userPassword'] ?? '';
 $userType = $_SESSION['userType'] ?? '';
+
+$totalSales = getTotalSales();
+$totalUsers = getTotalUsers();
+$totalProducts = getTotalProducts();
+$pendingListings = getPendingListings();
+$totalOrders = getTotalOrders();
 ?>
 <!DOCTYPE html>
 <html>
@@ -171,22 +180,35 @@ $userType = $_SESSION['userType'] ?? '';
     <div class="grid">
         <div>
             <div class="section-title">Total Sales</div>
-            <div class="big-number">000TK</div>
+            <div class="big-number"><?= $totalSales ?> TK</div>
         </div>
     </div>
-
     <div class="divider"></div>
-
     <div class="grid">
         <div>
             <div class="section-title">User Registrations</div>
-            <div class="big-number">0</div>
+            <div class="big-number"><?= $totalUsers ?></div>
+        </div>
+    </div>
+    <div class="divider"></div>
+    <div class="grid">
+        <div>
+            <div class="section-title">Total Products</div>
+            <div class="big-number"><?= $totalProducts ?></div>
+        </div>
+    </div>
+    <div class="divider"></div>
+    <div class="grid">
+        <div>
+            <div class="section-title">Total Orders</div>
+            <div class="big-number"><?= $totalOrders ?></div>
+        </div>
+    </div>
+
+            </div>
         </div>
     </div>
     </div>
-    </div>
-</div>
-            </div>
     <footer>
         Copyright © 2025
     </footer>
