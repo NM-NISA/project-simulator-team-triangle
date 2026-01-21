@@ -11,7 +11,7 @@ $email = $_SESSION['userEmail'] ?? '';
 $password = $_SESSION['userPassword'] ?? '';
 $userType = $_SESSION['userType'] ?? '';
 
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/userModel.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/userModel.php");
 
 $users = getAllUsers();
 ?>
