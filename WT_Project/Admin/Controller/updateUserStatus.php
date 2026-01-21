@@ -1,6 +1,6 @@
 <?php
 session_start();
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
 
 if (!isset($_SESSION['isLoggedIn']) || $_SESSION['userType'] !== 'admin') {
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
