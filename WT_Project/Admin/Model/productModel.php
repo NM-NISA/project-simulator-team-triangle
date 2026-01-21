@@ -1,7 +1,7 @@
 <?php
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/User/Model/db.php");
 
-function getAllProductsForAdmin() {
+function getAllProducts() {
     $db = new DatabaseConnection();
     $conn = $db->openConnection();
 
@@ -29,6 +29,31 @@ function getAllProductsForAdmin() {
     return $products;
 }
 
+function getAllProductsForAdmin() {
+    $db = new DatabaseConnection();
+    $conn = $db->openConnection();
+
+    $sql = "SELECT 
+                p.product_id, 
+                p.product_name, 
+                p.status AS product_status, 
+                p.category_name, 
+                p.availability,
+                u.name AS seller_name,
+                u.status AS user_status
+            FROM products_table p
+            JOIN user_table u ON p.user_id = u.user_id
+            ORDER BY p.product_id DESC 
+            LIMIT 10";
+
+    $result = mysqli_query($conn, $sql);
+    $products = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $products[] = $row;
+    }
+    return $products;
+}
+
 function updateProductStatus($productId, $status) {
     $db = new DatabaseConnection();
     $conn = $db->openConnection();
@@ -43,4 +68,27 @@ function updateProductStatus($productId, $status) {
     return $success;
 }
 
+function getTotalProducts() {
+    $db = new DatabaseConnection();
+    $conn = $db->openConnection();
+
+    $sql = "SELECT COUNT(*) as total FROM products_table";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+    return $row['total'] ?? 0;
+
+    $db->closeConnection($conn);
+}
+
+function getPendingListings() {
+    $db = new DatabaseConnection();
+    $conn = $db->openConnection();
+
+    $sql = "SELECT COUNT(*) as total FROM products_table WHERE status='pending'";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+    return $row['total'] ?? 0;
+
+    $db->closeConnection($conn);
+}
 ?>
