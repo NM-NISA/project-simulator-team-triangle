@@ -1,7 +1,8 @@
 <?php
 session_start();
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/productModel.php");
-$products = getAllProductsForAdmin();
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/productModel.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/userModel.php");
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/ordersModel.php");
 
 if (!isset($_SESSION["isLoggedIn"]) || $_SESSION["userType"] !== 'admin') {
     header("Location: /WT_Project/User/View/login.php");
@@ -9,32 +10,19 @@ if (!isset($_SESSION["isLoggedIn"]) || $_SESSION["userType"] !== 'admin') {
 }
 $name = $_SESSION["userName"];
 $userType = $_SESSION["userType"];
+
+$totalUsers = getTotalUsers();
+$totalProducts = getTotalProducts();
+$pendingListings = getPendingListings();
+$totalOrders = getTotalOrders();
+$products = getAllProductsForAdmin();
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title>Dashboard</title>
     <script>
-        function handleAction(btn) {
-            let row = btn.closest("tr");
-            let statusCell = row.querySelector(".status");
-            if (btn.innerText === "Pending") {
-                btn.innerText = "Approve";
-                btn.classList.remove("pending");
-                btn.classList.add("approve");
-                statusCell.innerText = "Approved";
-            } else if (btn.innerText === "Approve") {
-                btn.innerText = "Reject";
-                btn.classList.remove("approve");
-                btn.classList.add("reject");
-                statusCell.innerText = "Rejected";
-            } else {
-                btn.innerText = "Pending";
-                btn.classList.remove("reject");
-                btn.classList.add("pending");
-                statusCell.innerText = "Pending";
-            }
-        }
+       
     </script>
     <style>
         body{
@@ -150,36 +138,39 @@ $userType = $_SESSION["userType"];
             border-bottom: 1px solid #e5e7eb;
         }
         table tr:hover { background: #f8fafc; }
-        .status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 13px;
-            color: #fff;
-            display: inline-block;
+        .product {
+            font-size: 16px;
+            font-weight: bold;
         }
-        select {
-            padding: 6px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-        .status.pending {
+        .product.pending {
             color: #2563eb;
             font-weight: bold;
         }
-        .status.approved {
+        .product.approved {
             color: #16a34a;
             font-weight: bold;
         }
-        .status.rejected {
+        .product.rejected {
             color: #dc2626;
             font-weight: bold;
         }
-        button.approve {
-            background-color: #16a34a;
+        .status {
+            font-size: 16px;
+            font-weight: bold;
         }
-        button.approve:hover {
-            background-color: #15803d;
+        .status.active {
+            color: #16a34a;
+            font-weight: bold;
+        }
+        .status.blocked {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .availability {
+            font-size: 16px;
+            color: #7a7a7a;
+            font-weight: bold;
+            text-transform: capitalize;
         }
     </style>
 </head>
@@ -216,7 +207,6 @@ $userType = $_SESSION["userType"];
                 <a class="btn" href="/WT_Project/Buyer/View/buyerDashboard.php">Dashboard</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/searchProduct.php">Search Products</a><br><br>
                 <a class="btn" href="/WT_Project/Buyer/View/placeOrder.php">Place Order</a><br><br>
-                <a class="btn" href="/WT_Project/Buyer/View/review.php">Review</a><br><br>
             <?php endif; ?>
             <a class="btn" href="/WT_Project/User/View/viewProfile.php">View Profile</a><br><br>
             <a class="btn" href="/WT_Project/User/Controller/logout.php">Logout</a>
@@ -225,19 +215,19 @@ $userType = $_SESSION["userType"];
         <div class="cards">
             <div class="card">
             <h3>Total Users</h3>
-            <p>0</p>
+            <p><?= $totalUsers ?></p>
         </div>
         <div class="card">
             <h3>Total Products</h3>
-            <p>0</p>
+            <p><?= $totalProducts ?></p>
         </div>
         <div class="card">
             <h3>Pending Listings</h3>
-            <p>0</p>
+            <p><?= $pendingListings ?></p>
         </div>
         <div class="card">
             <h3>Total Orders</h3>
-            <p>0</p>
+            <p><?= $totalOrders ?></p>
         </div>
     </div>
     <div class="table-section">
@@ -245,31 +235,23 @@ $userType = $_SESSION["userType"];
         <table>
         <thead>
           <tr>
-            <th>Product</th>
             <th>Seller</th>
+            <th>Product</th>
             <th>Category</th>
-            <th>Status</th>
-            <th>Action</th>
+            <th>User Status</th>
+            <th>Product Status</th>
+            <th>Availability</th>
           </tr>
         </thead>
         <tbody>
             <?php foreach ($products as $product): ?>
                 <tr>
-                    <td><?= htmlspecialchars($product['product_name']) ?></td>
                     <td><?= htmlspecialchars($product['seller_name']) ?></td>
+                    <td><?= htmlspecialchars($product['product_name']) ?></td>
                     <td><?= htmlspecialchars($product['category_name']) ?></td>
-                    <td class="status <?= $product['status'] ?>"><?= htmlspecialchars($product['status']) ?></td>
-                    <td>
-                        <form method="post" action="/WT_Project/Admin/Controller/productModerationController.php">
-                        <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
-                        <select name="status" required>
-                            <option value="pending" <?= $product['status']=='pending'?'selected':'' ?>>Pending</option>
-                            <option value="approved" <?= $product['status']=='approved'?'selected':'' ?>>Approved</option>
-                            <option value="rejected" <?= $product['status']=='rejected'?'selected':'' ?>>Rejected</option>
-                        </select>
-                        <button type="submit" class="approve">Save</button>
-                        </form>
-                    </td>
+                    <td class="status <?= $product['user_status'] ?>"><?= htmlspecialchars(ucfirst($product['user_status'])) ?></td>
+                    <td class="product <?= $product['product_status'] ?>"><?= htmlspecialchars(ucfirst($product['product_status'])) ?></td>
+                    <td class="availability"><?= htmlspecialchars(ucfirst($product['availability'])) ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
