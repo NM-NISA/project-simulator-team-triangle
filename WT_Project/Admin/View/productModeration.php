@@ -1,7 +1,6 @@
 <?php
 session_start();
-include($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/productModel.php");
-$products = getAllProductsForAdmin();
+include_once($_SERVER['DOCUMENT_ROOT'] . "/WT_Project/Admin/Model/productModel.php");
 
 if (!isset($_SESSION['isLoggedIn']) || $_SESSION['isLoggedIn'] !== true) {
     header("Location: /WT_Project/User/View/login.php");
@@ -12,6 +11,8 @@ $name = $_SESSION['userName'] ?? '';
 $email = $_SESSION['userEmail'] ?? '';
 $password = $_SESSION['userPassword'] ?? '';
 $userType = $_SESSION['userType'] ?? '';
+
+$products = getAllProducts();
 ?>
 <!DOCTYPE html>
 <html>
@@ -240,12 +241,9 @@ $userType = $_SESSION['userType'] ?? '';
         </div>
         </div>
     </div>
-
     <footer>
         Copyright © 2025
     </footer>
-
 </div>
-
 </body>
 </html>
